@@ -75,8 +75,7 @@ then pull the change in with `copier update`.
 - `drivers/*/driver.xml`: driver XML configuration
 - `drivers/*/driver.c4zproj`: driver packaging manifest
 - `drivers/*/www/`: documentation and icons
-- `CHANGELOG.md`, seeded by the template on first render and left alone after
-  that
+- (no `CHANGELOG.md`: this repository keeps no changelog)
 - Any additional `src/` modules specific to this driver
 - Any additional `vendor/` libraries specific to this driver
 - `test/` suites written for this driver, and the local support files they

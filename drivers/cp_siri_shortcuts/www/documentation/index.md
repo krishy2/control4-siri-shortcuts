@@ -25,11 +25,11 @@ Siri Shortcuts driver by **Control Pro** -
 > DISCLAIMER: This software is neither affiliated with nor endorsed by either
 > Control4 or Apple.
 
-The Siri Shortcuts driver lets you control the home by voice from an iPhone,
-iPad or Apple Watch with one Apple Shortcut: lights, Advanced Lighting scenes,
-scenarios (custom buttons and macros) and room media (sources, volume, mute,
-play, pause, tracks, room off). It needs no extra hardware, no cloud service and
-no Control4 subscription.
+The Siri Shortcuts driver lets you control the home by voice from an iPhone or
+iPad with one Apple Shortcut: lights, Advanced Lighting scenes, scenarios
+(custom buttons and macros) and room media (sources, volume, mute, play, pause,
+tracks, room off). It needs no extra hardware, no cloud service and no Control4
+subscription.
 
 Apple's own AI does the understanding. The shortcut asks the driver for the
 project's names, lets the Shortcuts **Use Model** action turn what you said into
@@ -46,7 +46,14 @@ the next request already uses the new name.
 - [System Requirements](#system-requirements)
 - [Installer Setup](#installer-setup)
   - [Driver Installation](#driver-installation)
-  - [The Shortcut](#the-shortcut)
+- [Creating the Shortcut](#creating-the-shortcut)
+  - [Before You Start](#before-you-start)
+  - [Build It Step by Step](#build-it-step-by-step)
+  - [Try It](#try-it)
+  - [Alternative: Funny Answers](#alternative-funny-answers)
+  - [Share It with Your Household](#share-it-with-your-household)
+  - [If Something Goes Wrong](#if-something-goes-wrong)
+- [Driver Reference](#driver-reference)
   - [Driver Properties](#driver-properties)
   - [Commands](#commands)
   - [Actions](#actions)
@@ -54,7 +61,6 @@ the next request already uses the new name.
   - [HTTP Endpoints](#http-endpoints)
   - [Updates](#updates)
 - [Support](#support)
-- [Changelog](#changelog)
 
 </div>
 
@@ -71,30 +77,124 @@ the next request already uses the new name.
 
 1. Add the **Siri Shortcuts** driver to the project (one per project is enough).
    Its room is the default room for media commands that name none.
-1. Note the **Context URL** and **Execute URL** properties.
-1. Build the shortcut below on each phone.
+1. Note the **Context URL** and **Execute URL** properties: the shortcut needs
+   them.
+1. Create the shortcut once (next section) and share it with the household.
 
-## The Shortcut
+# <span style="color:#660066">Creating the Shortcut</span>
 
-Create a new shortcut with a short name Siri hears well (e.g. "Home") and add
-these actions:
+The shortcut is made once, on one iPhone, then shared with everyone in the
+household. It holds no names from the project: the driver sends them each time,
+so the shortcut never needs editing when the project changes.
 
-1. **Get Contents of URL**: the Context URL (method GET).
-1. **Dictate Text**: Stop Listening After Pause.
-1. **Text**: the _Contents of URL_ variable, an empty line, then `Request: `
-   followed by the _Dictated Text_ variable.
-1. **Use Model**: model Cloud (Private Cloud Compute), input the Text from step
-   3, Output **Dictionary**.
-1. **Get Contents of URL**: the Execute URL, method **POST**, Request Body
-   **File**, File = the _Response_ of step 4.
-1. **Speak Text**: the _Contents of URL_ of step 5.
+## Before You Start
 
-Say "Hey Siri, Home", then the request: "turn on the dining light", "living room
-volume 30", "a bit quieter in the bedroom", "play Sonos in the kitchen", "run
-Arrived".
+- An iPhone or iPad with Apple Intelligence turned on (iOS 26 or later): the
+  shortcut uses Apple's **Use Model** action.
+- The **Context URL** and **Execute URL** from the driver's properties in
+  Composer, e.g. `http://192.168.1.10:8765/context` and
+  `http://192.168.1.10:8765/execute`.
+- The phone on the home network.
 
-If the Dictionary output gives trouble, set step 4's Output to **Text**; the
-driver also reads the dictionary as JSON text.
+## Build It Step by Step
+
+Open the **Shortcuts** app, tap **+**, and name the shortcut with a short word
+Siri hears well, e.g. **Home** (tap the name at the top to rename it). Then add
+these six actions in this order (tap **Add Action** or the search field, type
+the action's name, tap it):
+
+1. **Get Contents of URL**
+   - Tap _URL_ and type the **Context URL**.
+   - Leave the method on **GET**.
+1. **Dictate Text**
+   - Tap **›** and set **Stop Listening** to **After Pause**.
+   - **Language**: the language you will speak.
+1. **Text**
+   - Long-press in the text box, choose **Select Variable**, and pick **Contents
+     of URL** (from step 1).
+   - Press return to start a new line, type `Request: ` and insert the variable
+     **Dictated Text** after it.
+1. **Use Model**
+   - Tap the model and choose **Cloud**.
+   - The text box shows **Text** (from step 3); if not, insert it.
+   - Tap **›** and set **Output** to **Dictionary**. Leave Follow Up off.
+1. **Get Contents of URL**
+   - Tap _URL_ and type the **Execute URL**.
+   - Tap **›**: **Method** **POST**, **Request Body** **File**, **File** =
+     **Response** (from Use Model).
+1. **Speak Text**
+   - Speak **Contents of URL** (from step 5, the second one).
+   - Tap **›** to choose the voice and its language.
+
+## Try It
+
+Say **"Hey Siri, Home"**. Siri listens; then say the request:
+
+- "Turn on the dining light", "Dining light to 40 percent"
+- "Lights off in the kitchen"
+- "Evening scene", "Run Arrived"
+- "Play Sonos in the living room", "Living room volume 30", "A bit quieter"
+- "Pause", "Next track", "Turn off the living room"
+
+Siri answers with what was done ("Dining on.") or asks back ("Which room?"). The
+request can be in any language the dictation understands; the names are matched
+to the project's names.
+
+## Alternative: Funny Answers
+
+The driver always answers plainly. To have a witty voice instead, the shortcut
+can let Apple's AI rewrite the answer before Siri speaks it, in the language of
+the request. Replace step 6 (**Speak Text**) with three actions:
+
+6. **Text**, with this content (insert **Dictated Text** and the **Contents of
+   URL** of step 5 where shown):
+
+   ```
+   You are the witty voice of a smart home.
+   Rewrite the home's answer as ONE short, funny spoken sentence
+   (at most 20 words), in the same language as the user's request.
+   Keep every fact exactly: names, numbers, on or off, the room.
+   If the answer is a question or a problem, stay clear about
+   what the user should do. No emojis, no quotation marks.
+
+   User's request: [Dictated Text]
+   Home's answer: [Contents of URL]
+   ```
+
+1. **Use Model**: **On-Device** (fastest; Cloud for better jokes), input the
+   Text of step 6, Output **Text**.
+
+1. **Speak Text**: the **Response** of step 7.
+
+Change the first line to give it another character, e.g. "a sarcastic English
+butler". It adds a second or so to each request. The driver's **Last Reply**
+property still shows the plain answer.
+
+## Share It with Your Household
+
+1. In Shortcuts, long-press the shortcut, tap **Share**, then **Copy iCloud
+   Link** (or AirDrop / Messages to the family member).
+1. They open the link on their iPhone and tap **Add Shortcut**.
+1. The first time it runs, iOS asks to allow the shortcut to connect to the
+   controller: tap **Allow** (and **Always Allow**, so it does not ask again).
+
+Everyone gets the same shortcut; nothing needs changing on their phone except,
+if they like, the dictation language (step 2) and the voice (last step). Each
+phone needs Apple Intelligence and the home network.
+
+## If Something Goes Wrong
+
+- **"Sorry, the command did not arrive."**: check step 5: method POST, Request
+  Body File, File = Response.
+- **Siri says it cannot connect**: the phone is not on the home network, or the
+  URL or port is wrong (compare with the driver's properties).
+- **The wrong light or room**: look at **Last Command** in Composer to see what
+  the AI understood; add a hint in **Extra Instructions**, or hide names it
+  should not use with **Hidden Names**.
+- **Test without switching anything**: set **Execute Commands** to No; the
+  driver answers "Test mode. ..." and sends nothing.
+
+# <span style="color:#660066">Driver Reference</span>
 
 ## Driver Properties
 
@@ -109,7 +209,8 @@ driver also reads the dictionary as JSON text.
 
 - **Driver Status** (read-only): whether the driver listens.
 - **Driver Version** (read-only)
-- **Log Level**, **Log Mode**: as in the other drivers of the suite.
+- **Log Level**, **Log Mode**: Log Mode Print shows the log in Composer's Lua
+  Output; Debug logs every request, Trace also its body.
 
 ### Shortcut Settings
 
@@ -202,5 +303,3 @@ https://github.com/krishy2/control4-siri-shortcuts/issues/new
 If the driver is useful to you, you can buy me a coffee:
 
 <a href="https://buymeacoffee.com/szorfoktato" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-
-<!-- #embed-changelog -->

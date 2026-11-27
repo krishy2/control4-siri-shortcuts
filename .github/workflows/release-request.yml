@@ -4,7 +4,6 @@ name: Release request
 #
 # To release: put the version (YYYYMMDDNN: the date and a two-digit release
 # number for that day, higher than the last release) in .github/release-version,
-# retitle the CHANGELOG's "Unreleased" section to "## vYYYYMMDDNN - <date>",
 # and push to main. This workflow checks and tests the code, builds every
 # driver with that version, then creates the tag vYYYYMMDDNN and a GitHub
 # release with the .c4z files, docs and zip.
@@ -119,19 +118,15 @@ jobs:
           fi
           echo "$count drivers built"
 
-      - name: Release notes from the changelog
+      - name: Release notes
         run: |
           python3 - <<'EOF'
-          import os, re
-          version = os.environ["DRIVER_VERSION"]
-          text = open("CHANGELOG.md", encoding="utf-8").read()
-          m = re.search(r"^## v" + version + r"\b[^\n]*\n(.*?)(?=^## |\Z)", text, re.S | re.M)
-          body = m.group(1) if m else ""
-          body = re.sub(r"<!--.*?-->", "", body, flags=re.S).strip()
-          if not body:
-              body = "See CHANGELOG.md."
-          body += (
-              "\n\n### Install\n\nInstall `cp_siri_shortcuts.c4z` with Composer Pro (Driver → Add or Update Driver)."
+          import os
+          body = (
+              "Siri Shortcuts driver by Control Pro - https://control-pro.co.uk\n\n"
+              "### Install\n\nInstall `cp_siri_shortcuts.c4z` with Composer Pro (Driver → Add or Update Driver). "
+              "Installed drivers with Automatic Updates on update by themselves.\n\n"
+              "The documentation is the PDF below and the repository's README."
           )
           open(os.environ["RUNNER_TEMP"] + "/notes.md", "w", encoding="utf-8").write(body)
           print(body)
