@@ -12,6 +12,11 @@
 --- Get Contents of URL (POST /execute, body: the dictionary) -> Speak Text.
 ---
 --- No authentication: anything on the LAN can send commands (by design).
+---
+--- Control Pro - https://control-pro.co.uk
+
+DRIVER_GITHUB_REPO = "krishy2/control4-siri-shortcuts"
+DRIVER_FILENAMES = { "cp_siri_shortcuts.c4z" }
 
 require("lib.utils")
 require("drivers-common-public.global.handlers")
@@ -20,6 +25,8 @@ require("drivers-common-public.global.timer")
 JSON = JSON or require("JSON")
 
 local log = require("lib.logging")
+local persist = require("lib.persist")
+local githubUpdater = require("lib.github-updater")
 local Http = require("voice.http")
 local Names = require("voice.names")
 local Catalog = require("voice.catalog")
@@ -31,6 +38,10 @@ local CATALOG_MAX_AGE = 30 * ONE_SECOND
 -- A connection that sends no complete request in this time is closed.
 local CONNECTION_TIMEOUT = 15 * ONE_SECOND
 local READ_SIZE = 16384
+-- How often Automatic Updates looks for a new release.
+local UPDATE_INTERVAL = 30 * ONE_MINUTE
+-- Remembers a sent update until the restarted driver confirms its version.
+local UPDATE_PERSIST_KEY = "PendingUpdate"
 
 -- Runtime state
 local gServer = nil
@@ -349,6 +360,18 @@ function OnDriverLateInit()
   -- The server must not be created during OnDriverInit.
   startServer()
   catalog(true)
+
+  -- Automatic Updates: one instance checks (the lowest device ID), every 30 minutes.
+  SetTimer("UpdateCheck", UPDATE_INTERVAL, function()
+    if IsUpdateLeader() and Properties["Automatic Updates"] == "On" then
+      log:info("Checking for a driver update")
+      UpdateDrivers()
+    end
+  end, true)
+  -- After an update: say whether the new version is running.
+  if persist:get(UPDATE_PERSIST_KEY, nil) ~= nil then
+    SetTimer("UpdateVerify", 30 * ONE_SECOND, VerifyDriverUpdate)
+  end
 end
 
 function OnDriverDestroyed()
@@ -416,4 +439,121 @@ end
 
 function EC.Restart_Server(tParams)
   startServer()
+end
+
+function EC.UpdateDrivers(tParams)
+  log:trace("EC.UpdateDrivers()")
+  UpdateDrivers(true, true)
+end
+
+-----------------------------------------------------------------------
+-- Updates from GitHub releases
+-----------------------------------------------------------------------
+
+--- Only one instance checks for updates: the one with the lowest device ID.
+--- @return boolean
+function IsUpdateLeader()
+  local lowest = nil
+  for k, v in pairs(C4:GetDevicesByC4iName(DRIVER_FILENAMES[1]) or {}) do
+    local id = tonumber(type(v) == "number" and v or k)
+    if id ~= nil and (lowest == nil or id < lowest) then
+      lowest = id
+    end
+  end
+  return lowest == nil or lowest == C4:GetDeviceID()
+end
+
+--- Installed drivers of this repository and their versions.
+--- @return string[] filenames, table<string, string> versions
+local function installedDrivers()
+  local files, versions = {}, {}
+  for _, filename in ipairs(DRIVER_FILENAMES) do
+    if not IsEmpty(C4:GetDevicesByC4iName(filename) or {}) then
+      files[#files + 1] = filename
+      local ok, v = pcall(GetDriverVersion, filename)
+      versions[filename] = ok and v or nil
+    end
+  end
+  return files, versions
+end
+
+--- After an update was sent: check that the driver now runs the release's version.
+function VerifyDriverUpdate()
+  local pending = persist:get(UPDATE_PERSIST_KEY, nil)
+  if type(pending) ~= "table" then
+    return
+  end
+  persist:delete(UPDATE_PERSIST_KEY)
+  CancelTimer("UpdateVerify")
+  local _, versions = installedDrivers()
+  local failed = {}
+  for _, filename in ipairs(pending.drivers or {}) do
+    if versions[filename] ~= pending.version then
+      failed[#failed + 1] = string.format("%s is on %s", filename, tostring(versions[filename] or "unknown"))
+    end
+  end
+  if IsEmpty(failed) then
+    log:print("Update to %s succeeded: version %s", pending.tag, pending.version)
+  else
+    log:print(
+      "Update to %s FAILED: %s (expected %s). Run Update Drivers again or install the .c4z from GitHub.",
+      pending.tag,
+      table.concat(failed, ", "),
+      pending.version
+    )
+  end
+end
+
+local function errorText(err)
+  if type(err) == "table" then
+    local parts = {}
+    for _, e in pairs(err) do
+      parts[#parts + 1] = tostring(e)
+    end
+    return table.concat(parts, "; ")
+  end
+  return tostring(err)
+end
+
+--- Update the driver from the GitHub repository's latest release.
+--- @param forceUpdate? boolean Reinstall even if up to date.
+--- @param manual? boolean Asked for by the user: every step goes to the log.
+function UpdateDrivers(forceUpdate, manual)
+  log:trace("UpdateDrivers(%s, %s)", forceUpdate, manual)
+  local say = function(...)
+    if manual then
+      log:print(...)
+    else
+      log:info(...)
+    end
+  end
+  local files, versions = installedDrivers()
+  local current = {}
+  for _, filename in ipairs(files) do
+    current[#current + 1] = string.format("%s %s", filename, tostring(versions[filename] or "?"))
+  end
+  say(
+    "Update started: checking %s for the latest release (installed: %s)",
+    DRIVER_GITHUB_REPO,
+    table.concat(current, ", ")
+  )
+  githubUpdater
+    :updateAll(DRIVER_GITHUB_REPO, DRIVER_FILENAMES, Properties["Update Channel"] == "Prerelease", forceUpdate)
+    :next(function(updatedDrivers)
+      local release = githubUpdater.lastRelease or {}
+      local tag = tostring(release.tag_name or "?")
+      if IsEmpty(updatedDrivers) then
+        say("Update finished: already on the latest release %s, nothing to install", tag)
+        return
+      end
+      local version = tag:gsub("^[vV]", "")
+      persist:set(UPDATE_PERSIST_KEY, { tag = tag, version = version, drivers = updatedDrivers })
+      log:print("Update: %s downloaded and sent to the controller; the driver restarts now", tag)
+    end, function(error)
+      local text = errorText(error)
+      if manual then
+        log:print("Update FAILED: %s", text)
+      end
+      log:error("An error occurred updating the driver: %s", text)
+    end)
 end

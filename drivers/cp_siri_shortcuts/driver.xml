@@ -9,7 +9,7 @@
   <control>lua_gen</control>
   <controlmethod>ip</controlmethod>
   <driver>DriverWorks</driver>
-  <copyright>Copyright 2026 Control Pro. All rights reserved.</copyright>
+  <copyright>Copyright 2026 Control Pro (control-pro.co.uk). All rights reserved.</copyright>
   <created>11/27/2026 12:00:00 PM</created>
   <modified/>
   <combo>true</combo>
@@ -45,8 +45,36 @@
         <name>Restart Server</name>
         <command>Restart Server</command>
       </action>
+      <action>
+        <name>Update Drivers</name>
+        <command>UpdateDrivers</command>
+      </action>
     </actions>
     <properties>
+      <property>
+        <name>Updates</name>
+        <type>LABEL</type>
+        <default>Update Settings</default>
+      </property>
+      <property>
+        <name>Automatic Updates</name>
+        <type>LIST</type>
+        <items>
+          <item>Off</item>
+          <item>On</item>
+        </items>
+        <default>On</default>
+        <description>Install new releases from GitHub by themselves (checked every 30 minutes).</description>
+      </property>
+      <property>
+        <name>Update Channel</name>
+        <type>LIST</type>
+        <default>Production</default>
+        <items>
+          <item>Production</item>
+          <item>Prerelease</item>
+        </items>
+      </property>
       <property>
         <name>Driver Settings</name>
         <type>LABEL</type>

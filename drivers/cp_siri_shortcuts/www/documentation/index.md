@@ -1,4 +1,4 @@
-<!-- Copyright 2026 Control Pro. All rights reserved. -->
+<!-- Copyright 2026 Control Pro (control-pro.co.uk). All rights reserved. -->
 
 <style>
 @media print {
@@ -13,11 +13,14 @@
 }
 </style>
 
-<img alt="Voice" src="./images/header.png" width="400"/>
+<img alt="Control Pro" src="./images/header.png" width="400"/>
 
 ______________________________________________________________________
 
 # <span style="color:#660066">Overview</span>
+
+Siri Shortcuts driver by **Control Pro** -
+[control-pro.co.uk](https://control-pro.co.uk)
 
 > DISCLAIMER: This software is neither affiliated with nor endorsed by either
 > Control4 or Apple.
@@ -49,6 +52,7 @@ the next request already uses the new name.
   - [Actions](#actions)
   - [Programming](#programming)
   - [HTTP Endpoints](#http-endpoints)
+  - [Updates](#updates)
 - [Support](#support)
 - [Changelog](#changelog)
 
@@ -93,6 +97,13 @@ If the Dictionary output gives trouble, set step 4's Output to **Text**; the
 driver also reads the dictionary as JSON text.
 
 ## Driver Properties
+
+### Update Settings
+
+- **Automatic Updates** \[ Off | **_On_** \]: install new releases from GitHub
+  by themselves, checked every 30 minutes.
+- **Update Channel** \[ **_Production_** | Prerelease \]: Prerelease also
+  installs test releases.
 
 ### Driver Settings
 
@@ -155,6 +166,8 @@ Where it reads the names:
   also read again on each request older than 30 seconds.
 - **Print Context**: print the instructions and names the shortcut gets.
 - **Restart Server**
+- **Update Drivers**: install the latest release from GitHub now, even when the
+  driver is already on it.
 
 ## Programming
 
@@ -170,7 +183,16 @@ Where it reads the names:
   too, for testing from a browser.
 - `GET /names`: everything the driver knows, as JSON.
 
+## Updates
+
+The driver updates itself from the GitHub releases of
+[krishy2/control4-siri-shortcuts](https://github.com/krishy2/control4-siri-shortcuts/releases)
+when Automatic Updates is On. The log says when an update was installed and
+whether the new version is running.
+
 # <span style="color:#660066">Support</span>
+
+Control Pro - [control-pro.co.uk](https://control-pro.co.uk)
 
 If you have any questions or issues integrating this driver with Control4, you
 can file an issue on GitHub:
