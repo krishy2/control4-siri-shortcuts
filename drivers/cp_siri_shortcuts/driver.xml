@@ -1,0 +1,199 @@
+<devicedata>
+  <name>Siri Shortcuts</name>
+  <version/>
+  <manufacturer>Control Pro</manufacturer>
+  <model>Siri Shortcuts</model>
+  <creator>Chris Toth</creator>
+  <small image_source="c4z">icons/device_sm.png</small>
+  <large image_source="c4z">icons/device_lg.png</large>
+  <control>lua_gen</control>
+  <controlmethod>ip</controlmethod>
+  <driver>DriverWorks</driver>
+  <copyright>Copyright 2026 Control Pro. All rights reserved.</copyright>
+  <created>11/27/2026 12:00:00 PM</created>
+  <modified/>
+  <combo>true</combo>
+  <minimum_os_version>3.3.0</minimum_os_version>
+  <composer_categories>
+    <category>Utility</category>
+  </composer_categories>
+  <events>
+    <event>
+      <id>1</id>
+      <name>Command Received</name>
+      <description>When NAME carries out a voice command</description>
+    </event>
+    <event>
+      <id>2</id>
+      <name>Command Not Understood</name>
+      <description>When NAME gets a voice command it cannot carry out</description>
+    </event>
+  </events>
+  <config>
+    <script file="driver.lua" jit="1"/>
+    <documentation file="www/documentation/index.html"/>
+    <actions>
+      <action>
+        <name>Refresh Names</name>
+        <command>Refresh Names</command>
+      </action>
+      <action>
+        <name>Print Context</name>
+        <command>Print Context</command>
+      </action>
+      <action>
+        <name>Restart Server</name>
+        <command>Restart Server</command>
+      </action>
+    </actions>
+    <properties>
+      <property>
+        <name>Driver Settings</name>
+        <type>LABEL</type>
+        <default>Driver Settings</default>
+      </property>
+      <property>
+        <name>Driver Status</name>
+        <type>STRING</type>
+        <default/>
+        <readonly>true</readonly>
+      </property>
+      <property>
+        <name>Driver Version</name>
+        <type>STRING</type>
+        <default/>
+        <readonly>true</readonly>
+      </property>
+      <property>
+        <name>Log Level</name>
+        <type>LIST</type>
+        <default>3 - Info</default>
+        <items>
+          <item>0 - Fatal</item>
+          <item>1 - Error</item>
+          <item>2 - Warning</item>
+          <item>3 - Info</item>
+          <item>4 - Debug</item>
+          <item>5 - Trace</item>
+          <item>6 - Ultra</item>
+        </items>
+      </property>
+      <property>
+        <name>Log Mode</name>
+        <type>LIST</type>
+        <default>Off</default>
+        <items>
+          <item>Off</item>
+          <item>Print</item>
+          <item>Log</item>
+          <item>Print and Log</item>
+        </items>
+      </property>
+      <property>
+        <name>Shortcut Settings</name>
+        <type>LABEL</type>
+        <default>Shortcut Settings</default>
+      </property>
+      <property>
+        <name>Port</name>
+        <type>RANGED_INTEGER</type>
+        <minimum>1024</minimum>
+        <maximum>65535</maximum>
+        <default>8765</default>
+        <description>HTTP port the shortcut calls on the controller (LAN only, no password).</description>
+      </property>
+      <property>
+        <name>Context URL</name>
+        <type>STRING</type>
+        <default/>
+        <readonly>true</readonly>
+        <description>The shortcut's first Get Contents of URL (GET).</description>
+      </property>
+      <property>
+        <name>Execute URL</name>
+        <type>STRING</type>
+        <default/>
+        <readonly>true</readonly>
+        <description>The shortcut's second Get Contents of URL (POST, body: the Use Model dictionary).</description>
+      </property>
+      <property>
+        <name>Execute Commands</name>
+        <type>LIST</type>
+        <default>Yes</default>
+        <items>
+          <item>Yes</item>
+          <item>No</item>
+        </items>
+        <description>No: test mode. Commands are understood, logged and answered, but nothing is sent.</description>
+      </property>
+      <property>
+        <name>Default Room</name>
+        <type>DEVICE_SELECTOR</type>
+        <items>
+          <item>roomdevice.c4i</item>
+        </items>
+        <multiselect>false</multiselect>
+        <description>Room for media commands that name none. None: this driver's own room.</description>
+      </property>
+      <property>
+        <name>Volume Step</name>
+        <type>RANGED_INTEGER</type>
+        <minimum>1</minimum>
+        <maximum>50</maximum>
+        <default>10</default>
+        <description>Percent for "louder" and "quieter" without a number.</description>
+      </property>
+      <property>
+        <name>Hidden Names</name>
+        <type>STRING</type>
+        <default/>
+        <description>Rooms, lights, scenes, scenarios and sources the shortcut should not know, comma separated. * is a wildcard (e.g. Test*, Purchased Drivers).</description>
+      </property>
+      <property>
+        <name>Extra Instructions</name>
+        <type>STRING</type>
+        <default/>
+        <description>Added to the instructions for the AI, e.g. "Nappali means Living Room. The lamp means Dining."</description>
+      </property>
+      <property>
+        <name>Status</name>
+        <type>LABEL</type>
+        <default>Status</default>
+      </property>
+      <property>
+        <name>Known Names</name>
+        <type>STRING</type>
+        <default/>
+        <readonly>true</readonly>
+      </property>
+      <property>
+        <name>Last Request</name>
+        <type>STRING</type>
+        <default/>
+        <readonly>true</readonly>
+      </property>
+      <property>
+        <name>Last Command</name>
+        <type>STRING</type>
+        <default/>
+        <readonly>true</readonly>
+        <description>The dictionary the shortcut sent.</description>
+      </property>
+      <property>
+        <name>Last Reply</name>
+        <type>STRING</type>
+        <default/>
+        <readonly>true</readonly>
+      </property>
+      <property>
+        <name>Last Sent</name>
+        <type>STRING</type>
+        <default/>
+        <readonly>true</readonly>
+        <description>Control4 commands sent for the last request (device ID, command, parameters).</description>
+      </property>
+    </properties>
+  </config>
+  <capabilities/>
+  <connections/>
+</devicedata>
