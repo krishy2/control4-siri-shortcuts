@@ -2,6 +2,8 @@
 
 <img alt="Control Pro" src="./images/header.png" width="400"/>
 
+<a href="https://buymeacoffee.com/szorfoktato" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
 ______________________________________________________________________
 
 # <span style="color:#660066">Overview</span>

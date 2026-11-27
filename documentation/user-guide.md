@@ -1,5 +1,7 @@
 <img alt="Control Pro" src="../images/header.png" width="320"/>
 
+<a href="https://buymeacoffee.com/szorfoktato" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
 # Talk to Your Home with Siri
 
 A guide for everyone in the household. By **Control Pro** -
@@ -195,3 +197,7 @@ ______________________________________________________________________
 
 Questions? Ask your installer, or visit
 [control-pro.co.uk](https://control-pro.co.uk).
+
+If this is useful to you, you can buy me a coffee:
+
+<a href="https://buymeacoffee.com/szorfoktato" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>

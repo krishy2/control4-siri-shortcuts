@@ -1,5 +1,7 @@
 # Contributing to control4-siri-shortcuts
 
+<a href="https://buymeacoffee.com/szorfoktato" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
 ## Project Structure
 
 This project uses [Copier](https://copier.readthedocs.io/) to manage shared
@@ -327,3 +329,5 @@ where `__NAME__` would render as bold instead. In `.c4zproj` files,
 `readme_driver_slug` may name a generated variant, e.g. `<driver>_<suffix>`.
 `make build` takes the README and its images from the build output, where only
 the generated variants exist.
+
+<a href="https://buymeacoffee.com/szorfoktato" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
