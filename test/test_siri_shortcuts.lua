@@ -203,6 +203,7 @@ T.contains(
   "- Bedroom Thermostat (room: Bedroom); modes: Off, Heat, Cool, Auto, Fan Only"
 )
 T.contains("thermostat actions", text, "thermostat_set:")
+T.contains("mode key", text, "- mode:")
 T.contains("default room", text, "the home uses Living Room")
 T.contains("extra instructions", text, "- Nappali means Living Room.")
 T.excludes("hidden name", text, "Old Lamp")
@@ -212,7 +213,7 @@ T.section("Commands: parse")
 T.eq(
   "dictionary JSON",
   Commands.parse('{"room":"Living Room","action":"Volume Set","target":"","value":30,"heard":"x"}', nil, decode),
-  { room = "Living Room", action = "volume_set", target = "", value = "30", heard = "x" }
+  { room = "Living Room", action = "volume_set", target = "", value = "30", heard = "x", mode = "" }
 )
 T.eq(
   "JSON in a code block, keys in any case",
@@ -228,6 +229,7 @@ T.eq("RTF from Shortcuts", fromRtf, {
   target = "Megjöttünk",
   value = "",
   heard = "run arrived",
+  mode = "",
 })
 T.eq("RTF: cp1252 and escapes", Rtf.toText("{\\rtf1{\\fonttbl x;}Caf\\'e9 \\{a\\}\\par b}"), "Café {a}\nb")
 T.eq("form fields", Commands.parse("action=volume_set&room=Living+Room&value=30", nil, decode).room, "Living Room")
@@ -373,6 +375,29 @@ T.eq(
   "off is mentioned",
   (trun({ action = "thermostat_set", value = "22" })),
   "Bedroom set to 22 degrees; the thermostat is off."
+)
+T.eq(
+  "turn on cooling at 26: mode first, then the cool setpoint",
+  { trun({ action = "thermostat_set", value = "26", mode = "cooling" }) },
+  {
+    "Bedroom cool, set to 26 degrees.",
+    {
+      { device = 41, command = "SET_MODE_HVAC", params = { MODE = "Cool" } },
+      { device = 41, command = "SET_SETPOINT_COOL", params = { CELSIUS = 26 } },
+    },
+    true,
+  }
+)
+T.eq(
+  "heat mode in a set: heat setpoint",
+  (select(2, trun({ action = "thermostat_set", value = "21", mode = "Heat" })))[2].command,
+  "SET_SETPOINT_HEAT"
+)
+T.eq("mode key on thermostat_mode", (trun({ action = "thermostat_mode", mode = "Auto" })), "Bedroom auto.")
+T.eq(
+  "unknown mode in a set: nothing sent",
+  { trun({ action = "thermostat_set", value = "26", mode = "turbo" }) },
+  { "Bedroom can be Off, Heat, Cool, Auto.", {}, false }
 )
 
 T.section("Commands: not understood, test mode")

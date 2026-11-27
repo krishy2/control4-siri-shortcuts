@@ -181,6 +181,42 @@ function Thermostat.resolve(data, target, room)
   return nil, "Which thermostat?"
 end
 
+--- Words for modes that are not the mode's name.
+Thermostat.MODE_WORDS = {
+  cooling = "cool",
+  cold = "cool",
+  ac = "cool",
+  ["air conditioning"] = "cool",
+  ["air conditioner"] = "cool",
+  heating = "heat",
+  warm = "heat",
+  automatic = "auto",
+  fan = "fan only",
+  ventilation = "fan only",
+  dehumidify = "dry",
+}
+
+--- The mode a spoken word means: the mode's name, a word for it, or a name
+--- the word starts with ("cooling" -> Cool).
+--- @param modes { id: integer, name: string }[]
+--- @param spoken string
+--- @return { id: integer, name: string }|nil
+function Thermostat.findMode(modes, spoken)
+  local word = Names.normalize(spoken)
+  word = Thermostat.MODE_WORDS[word] or word
+  local found = Names.find(modes, word, nil)
+  if found ~= nil then
+    return found
+  end
+  for _, m in ipairs(modes) do
+    local name = Names.normalize(m.name)
+    if name ~= "" and word:sub(1, #name) == name then
+      return m
+    end
+  end
+  return nil
+end
+
 --- How a thermostat is named in a reply: its room when it has one.
 local function label(t)
   return (t.room ~= nil and t.room ~= "") and t.room or t.name
@@ -224,22 +260,42 @@ function Thermostat.run(cmd, data, room, defaultRoom, opts)
     return table.concat(parts, ", ") .. ".", true
   end
 
+  -- The mode asked for: thermostat_mode's value, or the mode key of any thermostat command.
+  local modes = {}
+  for i, m in ipairs(Thermostat.modes(vars)) do
+    modes[i] = { id = i, name = m }
+  end
+  local function modeNames()
+    local names = {}
+    for i, m in ipairs(modes) do
+      names[i] = m.name
+    end
+    return table.concat(names, ", ")
+  end
+  local wantedMode = cmd.mode or ""
+  if action == "thermostat_mode" and wantedMode == "" then
+    wantedMode = tostring(cmd.value ~= "" and cmd.value or cmd.target or "")
+  end
+  local newMode = nil
+  if wantedMode ~= "" then
+    local found = Thermostat.findMode(modes, wantedMode)
+    if found == nil then
+      return label(t) .. " can be " .. modeNames() .. ".", false
+    end
+    newMode = found.name
+  elseif action == "thermostat_mode" then
+    return label(t) .. " can be " .. modeNames() .. ".", false
+  end
+
   if action == "thermostat_mode" then
-    local wanted = tostring(cmd.value ~= "" and cmd.value or cmd.target or "")
-    local modes = {}
-    for i, m in ipairs(Thermostat.modes(vars)) do
-      modes[i] = { id = i, name = m }
-    end
-    local mode = Names.find(modes, wanted, nil)
-    if mode == nil then
-      local names = {}
-      for i, m in ipairs(modes) do
-        names[i] = m.name
-      end
-      return label(t) .. " can be " .. table.concat(names, ", ") .. ".", false
-    end
-    opts.send(t.id, "SET_MODE_HVAC", { MODE = mode.name })
-    return label(t) .. " " .. mode.name:lower() .. ".", true
+    opts.send(t.id, "SET_MODE_HVAC", { MODE = newMode })
+    return label(t) .. " " .. newMode:lower() .. ".", true
+  end
+
+  -- Setpoint commands with a mode: switch first, then the setpoint follows the new mode.
+  if newMode ~= nil and action ~= "temperature" then
+    opts.send(t.id, "SET_MODE_HVAC", { MODE = newMode })
+    st.mode = newMode
   end
 
   -- Setpoints
@@ -278,6 +334,9 @@ function Thermostat.run(cmd, data, room, defaultRoom, opts)
   local params = scale == "F" and { FAHRENHEIT = target } or { CELSIUS = target }
   opts.send(t.id, SETPOINT_COMMAND[which], params)
   local reply = label(t) .. " set to " .. Thermostat.say(target) .. " degrees"
+  if newMode ~= nil and newMode:lower() ~= "off" then
+    reply = label(t) .. " " .. newMode:lower() .. ", set to " .. Thermostat.say(target) .. " degrees"
+  end
   if tostring(st.mode or ""):lower() == "off" then
     reply = reply .. "; the thermostat is off"
   end

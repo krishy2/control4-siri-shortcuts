@@ -73,6 +73,7 @@ function Context.build(data, opts)
     "- action: one action from the Actions list",
     "- target: the light, scene, scenario or source, written exactly as in its list, or empty",
     "- value: a number when the action takes one, otherwise empty",
+    "- mode: for thermostat actions, the thermostat mode the request asks for (e.g. Cool), otherwise empty",
     "- heard: the request as you understood it, in a few words",
     "",
     "Rules:",
@@ -80,6 +81,7 @@ function Context.build(data, opts)
     "- A name that appears in several rooms needs the room; take it from the request.",
     "- Media actions (source, volume, mute, play, pause, next, previous, room_off) work on a room.",
     "- 'Set the bedroom to 22', 'make it warmer', 'cool mode', 'how warm is it' are thermostat actions.",
+    "- 'Turn on cooling at 26' is thermostat_set with value 26 and mode Cool: put the mode in mode.",
     "- Words like 'a bit', 'a little' mean no value. 'Half' means 50.",
     "- If nothing fits, use action unknown and explain in heard.",
   }

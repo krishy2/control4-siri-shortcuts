@@ -265,7 +265,9 @@ Thermostats:
 - The setpoint follows the mode: Cool sets the cooling setpoint, Heat the
   heating one. In Auto, a target above the room temperature sets heating, below
   it cooling. Warmer and cooler move the setpoint in use.
-- If the thermostat is off, the answer says so; the mode is not changed.
+- A mode in the same request is switched first: "turn on cooling at 26" sets
+  Cool, then the cooling setpoint to 26. Without a mode, an off thermostat stays
+  off and the answer says so.
 
 ## Actions
 
@@ -285,7 +287,7 @@ Thermostats:
 
 - `GET /context`: text for the Use Model action.
 - `POST /execute`: the dictionary as JSON:
-  `{"room":"Living Room","action":"volume_set","target":"","value":"30","heard":"living room volume 30"}`.
+  `{"room":"Living Room","action":"volume_set","target":"","value":"30","mode":"","heard":"living room volume 30"}`.
   Answers with the sentence to speak. `GET /execute?action=...&room=...` works
   too, for testing from a browser.
 - `GET /names`: everything the driver knows, as JSON.

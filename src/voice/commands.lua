@@ -127,6 +127,7 @@ function Commands.parse(body, query, decode)
     target = text("target"),
     value = text("value"),
     heard = text("heard"),
+    mode = text("mode"),
   }
 end
 
