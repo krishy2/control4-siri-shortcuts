@@ -1,4 +1,4 @@
-<!-- Copyright 2026 Control Pro (control-pro.co.uk). All rights reserved. -->
+<!-- Copyright 2026 Control Pro (control-pro.co.uk, c4@control-pro.co.uk). All rights reserved. -->
 
 <style>
 @media print {
@@ -22,7 +22,8 @@ ______________________________________________________________________
 # <span style="color:#660066">Overview</span>
 
 Siri Shortcuts driver by **Control Pro** -
-[control-pro.co.uk](https://control-pro.co.uk)
+[control-pro.co.uk](https://control-pro.co.uk) -
+[c4@control-pro.co.uk](mailto:c4@control-pro.co.uk)
 
 > DISCLAIMER: This software is neither affiliated with nor endorsed by either
 > Control4 or Apple.
@@ -321,7 +322,8 @@ whether the new version is running.
 
 # <span style="color:#660066">Support</span>
 
-Control Pro - [control-pro.co.uk](https://control-pro.co.uk)
+Control Pro - [control-pro.co.uk](https://control-pro.co.uk) -
+[c4@control-pro.co.uk](mailto:c4@control-pro.co.uk)
 
 If you have any questions or issues integrating this driver with Control4, you
 can file an issue on GitHub:

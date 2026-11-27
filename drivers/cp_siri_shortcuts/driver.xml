@@ -9,7 +9,7 @@
   <control>lua_gen</control>
   <controlmethod>ip</controlmethod>
   <driver>DriverWorks</driver>
-  <copyright>Copyright 2026 Control Pro (control-pro.co.uk). All rights reserved.</copyright>
+  <copyright>Copyright 2026 Control Pro (control-pro.co.uk, c4@control-pro.co.uk). All rights reserved.</copyright>
   <created>11/27/2026 12:00:00 PM</created>
   <modified/>
   <combo>true</combo>

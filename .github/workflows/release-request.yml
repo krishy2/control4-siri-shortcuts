@@ -123,10 +123,14 @@ jobs:
           python3 - <<'EOF'
           import os
           body = (
-              "Siri Shortcuts driver by Control Pro - https://control-pro.co.uk\n\n"
+              "Siri Shortcuts driver by Control Pro - https://control-pro.co.uk - c4@control-pro.co.uk\n\n"
               "### Install\n\nInstall `cp_siri_shortcuts.c4z` with Composer Pro (Driver → Add or Update Driver). "
               "Installed drivers with Automatic Updates on update by themselves.\n\n"
-              "The documentation is the PDF below and the repository's README."
+              "The documentation is the PDF below and the repository's README.\n\n"
+              "If the driver is useful to you, you can buy me a coffee:\n\n"
+              '<a href="https://buymeacoffee.com/szorfoktato" target="_blank">'
+              '<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" '
+              'style="height: 60px !important;width: 217px !important;" ></a>'
           )
           open(os.environ["RUNNER_TEMP"] + "/notes.md", "w", encoding="utf-8").write(body)
           print(body)

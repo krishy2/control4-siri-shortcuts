@@ -5,7 +5,8 @@
 # Talk to Your Home with Siri
 
 A guide for everyone in the household. By **Control Pro** -
-[control-pro.co.uk](https://control-pro.co.uk)
+[control-pro.co.uk](https://control-pro.co.uk) -
+[c4@control-pro.co.uk](mailto:c4@control-pro.co.uk)
 
 ______________________________________________________________________
 
@@ -195,8 +196,9 @@ a sarcastic English butler." It takes a second longer per request.
 
 ______________________________________________________________________
 
-Questions? Ask your installer, or visit
-[control-pro.co.uk](https://control-pro.co.uk).
+Questions? Ask your installer, visit
+[control-pro.co.uk](https://control-pro.co.uk), or write to
+[c4@control-pro.co.uk](mailto:c4@control-pro.co.uk).
 
 If this is useful to you, you can buy me a coffee:
 

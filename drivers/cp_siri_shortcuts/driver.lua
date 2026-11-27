@@ -13,7 +13,7 @@
 ---
 --- No authentication: anything on the LAN can send commands (by design).
 ---
---- Control Pro - https://control-pro.co.uk
+--- Control Pro - https://control-pro.co.uk - c4@control-pro.co.uk
 
 DRIVER_GITHUB_REPO = "krishy2/control4-siri-shortcuts"
 DRIVER_FILENAMES = { "cp_siri_shortcuts.c4z" }
