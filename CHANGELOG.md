@@ -18,6 +18,21 @@ Template for a new release entry (copy below the heading, fill in, uncomment):
 - Removed
 -->
 
+## v2026112703 - 2026-11-27
+
+### Fixed
+
+- Siri Shortcuts: commands from the shortcut were "unreadable". Shortcuts posts
+  the Use Model response as a rich text (RTF) file; the driver now reads the
+  dictionary inside it. Chunked uploads, `Expect: 100-continue` and form fields
+  are read too.
+
+### Changed
+
+- Siri Shortcuts: an unreadable command shows its size and content type in Last
+  Command and the log; Debug logging shows each request's size and type, Trace
+  its body.
+
 ## v2026112702 - 2026-11-27
 
 ### Added

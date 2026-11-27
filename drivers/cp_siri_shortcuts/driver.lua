@@ -130,8 +130,15 @@ local function execute(request)
     return JSON:decode(s)
   end)
   if cmd == nil then
-    log:warn("Execute: no command in %s", string.sub(request.body or "", 1, 300))
-    UpdateProperty("Last Command", "(unreadable) " .. string.sub(request.body or "", 1, 200))
+    local headers = request.headers or {}
+    local what = string.format(
+      "%d bytes, %s%s",
+      #(request.body or ""),
+      tostring(headers["content-type"] or "no content type"),
+      headers["transfer-encoding"] and (", " .. headers["transfer-encoding"]) or ""
+    )
+    log:warn("Execute: no command in %s: %s", what, string.sub(request.body or "", 1, 500))
+    UpdateProperty("Last Command", "(unreadable, " .. what .. ") " .. string.sub(request.body or "", 1, 200))
     UpdateProperty("Last Reply", "Sorry, the command did not arrive.")
     C4:FireEvent("Command Not Understood")
     return 400, "Sorry, the command did not arrive."
@@ -180,7 +187,15 @@ local HELP = table.concat({
 --- @return string response
 local function handle(request)
   local path = request.path:gsub("/+$", "")
-  log:debug("HTTP %s %s", request.method, request.path)
+  local headers = request.headers or {}
+  log:debug(
+    "HTTP %s %s (%d bytes, %s)",
+    request.method,
+    request.path,
+    #(request.body or ""),
+    tostring(headers["content-type"] or "no content type")
+  )
+  log:trace("HTTP body: %s", request.body)
   if path == "/context" and request.method == "GET" then
     UpdateProperty("Last Request", "Context " .. os.date("%Y-%m-%d %H:%M:%S"))
     return Http.response(200, contextText())
@@ -217,6 +232,7 @@ local function accept(client)
   local timerId = "Connection" .. gConnectionCount
   local reader = Http.reader()
   local done = false
+  local replied = false
   local function close()
     if not done then
       done = true
@@ -225,9 +241,10 @@ local function accept(client)
     end
   end
   local function reply(response)
-    if done then
+    if done or replied then
       return
     end
+    replied = true
     -- Closed once written (OnWrite), or by the timeout at the latest.
     if client:Write(response) == nil then
       close()
@@ -243,6 +260,10 @@ local function accept(client)
         elseif request ~= nil then
           reply(handle(request))
         else
+          local continue = reader:continueReply()
+          if continue ~= nil then
+            cli:Write(continue)
+          end
           cli:ReadUpTo(READ_SIZE)
         end
       end, debug.traceback)
@@ -252,7 +273,10 @@ local function accept(client)
       end
     end)
     :OnWrite(function()
-      close()
+      -- Only the final reply closes; a "100 Continue" does not.
+      if replied then
+        close()
+      end
     end)
     :OnDisconnect(function()
       done = true

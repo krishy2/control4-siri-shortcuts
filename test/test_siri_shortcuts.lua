@@ -20,6 +20,7 @@ local Names = require("voice.names")
 local Catalog = require("voice.catalog")
 local Context = require("voice.context")
 local Commands = require("voice.commands")
+local Rtf = require("voice.rtf")
 
 local function decode(s)
   return JSON:decode(s)
@@ -37,6 +38,16 @@ T.eq("method", req.method, "POST")
 T.eq("path", req.path, "/execute")
 T.eq("header names in lower case", req.headers["content-type"], "application/json")
 T.eq("body", req.body, '{"action":"pause"}')
+
+T.section("HTTP: chunked upload and 100-continue")
+local chunked = Http.reader()
+local creq = chunked:feed("POST /execute HTTP/1.1\r\nTransfer-Encoding: chunked\r\nExpect: 100-continue\r\n\r\n")
+T.eq("waits for the body", creq, nil)
+T.eq("continue once", chunked:continueReply(), "HTTP/1.1 100 Continue\r\n\r\n")
+T.eq("not twice", chunked:continueReply(), nil)
+T.eq("partial chunk", chunked:feed('7\r\n{"a":1'), nil)
+creq = chunked:feed("}\r\n0\r\n\r\n")
+T.eq("chunks joined", creq.body, '{"a":1}')
 
 T.section("HTTP: GET with a query")
 req = Http.reader():feed("GET /execute?action=volume_set&room=Living%20Room&value=30 HTTP/1.1\r\n\r\n")
@@ -191,6 +202,18 @@ T.eq(
   Commands.parse('```json\n{"Action":"pause","Room":"Bedroom"}\n```', nil, decode).action,
   "pause"
 )
+local rtfBody =
+  '{\\rtf1\\ansi\\ansicpg1252\\cocoartf2908\n\\cocoatextscaling0\\cocoaplatform1{\\fonttbl\\f0\\fswiss\\fcharset0 Helvetica;}\n{\\colortbl;\\red255\\green255\\blue255;}\n{\\*\\expandedcolortbl;;}\n\\pard\\tx560\\tx1120\\pardirnatural\\partightenfactor0\n\n\\f0\\fs24 \\cf0 \\{"room":"Living Room","action":"scenario","target":"Megj\\uc0\\u246 tt\\u252 nk","value":"","heard":"run arrived"\\}}'
+local fromRtf = Commands.parse(rtfBody, nil, decode)
+T.eq("RTF from Shortcuts", fromRtf, {
+  room = "Living Room",
+  action = "scenario",
+  target = "Megjöttünk",
+  value = "",
+  heard = "run arrived",
+})
+T.eq("RTF: cp1252 and escapes", Rtf.toText("{\\rtf1{\\fonttbl x;}Caf\\'e9 \\{a\\}\\par b}"), "Café {a}\nb")
+T.eq("form fields", Commands.parse("action=volume_set&room=Living+Room&value=30", nil, decode).room, "Living Room")
 T.eq("query fields", Commands.parse("", { action = "play", room = "Bedroom" }, decode).room, "Bedroom")
 T.eq("nothing usable", Commands.parse("hello", nil, decode), nil)
 

@@ -103,17 +103,64 @@ function Reader:feed(data)
       query = Http.parseQuery(query),
       headers = headers,
     }
+    self.chunked = tostring(headers["transfer-encoding"] or ""):lower():find("chunked", 1, true) ~= nil
     self.length = tonumber(headers["content-length"]) or 0
     if self.length < 0 then
       return nil, 400
     end
+    -- A client that asks first gets "100 Continue" (see Reader:continueReply).
+    self.expectContinue = tostring(headers["expect"] or ""):lower() == "100-continue"
+  end
+  local request = self.head
+  if self.chunked then
+    local body = Http.dechunk(self.buffer)
+    if body == nil then
+      return nil, nil
+    end
+    request.body = body
+    return request, nil
   end
   if #self.buffer < self.length then
     return nil, nil
   end
-  local request = self.head
   request.body = self.buffer:sub(1, self.length)
   return request, nil
+end
+
+--- The interim reply for a client that sent "Expect: 100-continue", once.
+--- @return string|nil
+function Reader:continueReply()
+  if self.expectContinue and not self.continued then
+    self.continued = true
+    return "HTTP/1.1 100 Continue\r\n\r\n"
+  end
+  return nil
+end
+
+--- Decode a chunked body (Transfer-Encoding: chunked).
+--- @param data string everything after the headers
+--- @return string|nil body nil until the last chunk has arrived
+function Http.dechunk(data)
+  local parts, pos = {}, 1
+  while true do
+    local lineEnd = data:find("\r\n", pos, true)
+    if lineEnd == nil then
+      return nil
+    end
+    local size = tonumber((data:sub(pos, lineEnd - 1):match("^%s*(%x+)")), 16)
+    if size == nil then
+      return nil
+    end
+    if size == 0 then
+      return table.concat(parts)
+    end
+    local chunkStart = lineEnd + 2
+    if #data < chunkStart + size + 1 then
+      return nil
+    end
+    parts[#parts + 1] = data:sub(chunkStart, chunkStart + size - 1)
+    pos = chunkStart + size + 2
+  end
 end
 
 --- Build a complete HTTP response that closes the connection.

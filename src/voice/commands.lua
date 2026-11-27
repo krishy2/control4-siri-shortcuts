@@ -18,6 +18,7 @@
 
 local Names = require("voice.names")
 local Context = require("voice.context")
+local Rtf = require("voice.rtf")
 
 local Commands = {}
 
@@ -49,7 +50,8 @@ local function trim(s)
 end
 
 --- Read the posted command. Accepts the dictionary as JSON, JSON inside other
---- text (a model answering in a code block), or form/query fields.
+--- text (a model answering in a code block), JSON inside RTF (Shortcuts posts
+--- the Use Model response as a rich text file), or form/query fields.
 --- @param body string|nil
 --- @param query table<string, string>|nil
 --- @param decode fun(s: string): any JSON decoder
@@ -57,6 +59,25 @@ end
 function Commands.parse(body, query, decode)
   local t
   body = tostring(body or "")
+  if Rtf.is(body) then
+    body = Rtf.toText(body)
+  end
+  -- Typographic quotes from rich text
+  body = body:gsub("\226\128\156", '"'):gsub("\226\128\157", '"')
+  if t == nil and body:find("=", 1, true) and not body:find("{", 1, true) then
+    local form = {}
+    for pair in body:gmatch("[^&\r\n]+") do
+      local k, v = pair:match("^%s*([%w_]+)%s*=%s*(.-)%s*$")
+      if k ~= nil then
+        form[k:lower()] = v:gsub("+", " "):gsub("%%(%x%x)", function(h)
+          return string.char(tonumber(h, 16))
+        end)
+      end
+    end
+    if form.action ~= nil then
+      query = form
+    end
+  end
   local first, last = body:find("{", 1, true), nil
   for i = #body, 1, -1 do
     if body:sub(i, i) == "}" then
