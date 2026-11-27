@@ -1,10 +1,15 @@
 name: Release request
 
-# Publishes a release when .github/release-version changes on main.
+# Publishes a release when .github/release-version changes on main, and a
+# pre-release when .github/prerelease-version changes on testing.
 #
 # To release: put the version (YYYYMMDDNN: the date and a two-digit release
-# number for that day, higher than the last release) in .github/release-version,
-# and push to main. This workflow checks and tests the code, builds every
+# number for that day, higher than every earlier release and pre-release) in
+# .github/release-version, and push to main.
+#
+# To publish a test build: the same in .github/prerelease-version on the testing
+# branch. It becomes a GitHub pre-release: drivers with Update Channel
+# "Prerelease" install it, drivers on "Production" ignore it. This workflow checks and tests the code, builds every
 # driver with that version, then creates the tag vYYYYMMDDNN and a GitHub
 # release with the .c4z files, docs and zip.
 #
@@ -13,8 +18,8 @@ name: Release request
 
 on:
   push:
-    branches: [main]
-    paths: ['.github/release-version']
+    branches: [main, testing]
+    paths: ['.github/release-version', '.github/prerelease-version']
 
 permissions:
   contents: write
@@ -33,15 +38,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read the requested version
+      - name: Release or pre-release
         run: |
-          version=$(tr -d '[:space:]' < .github/release-version)
+          if [ "$GITHUB_REF_NAME" = testing ]; then
+            file=.github/prerelease-version
+            echo "PRERELEASE=true" >> "$GITHUB_ENV"
+            echo "RELEASE_LABEL= (pre-release)" >> "$GITHUB_ENV"
+          else
+            file=.github/release-version
+            echo "PRERELEASE=false" >> "$GITHUB_ENV"
+            echo "RELEASE_LABEL=" >> "$GITHUB_ENV"
+          fi
+          # Both files trigger this workflow on both branches (e.g. after a merge);
+          # only the branch's own file, changed in this push, publishes.
+          before="${{ github.event.before }}"
+          changed=false
+          if [ -f "$file" ]; then
+            if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+              changed=true
+            elif git diff --name-only "$before" "$GITHUB_SHA" | grep -qx "$file"; then
+              changed=true
+            fi
+          fi
+          if [ "$changed" != true ]; then
+            echo "$file did not change on $GITHUB_REF_NAME; nothing to publish."
+            echo "SKIP=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "VERSION_FILE=$file" >> "$GITHUB_ENV"
+
+      - name: Read the requested version
+        if: env.SKIP != 'true'
+        run: |
+          version=$(tr -d '[:space:]' < "$VERSION_FILE")
           if [[ ! "$version" =~ ^[0-9]{4}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{2}$ ]]; then
-            echo "::error::.github/release-version must hold one version, YYYYMMDDNN; it holds '$version'."
+            echo "::error::$VERSION_FILE must hold one version, YYYYMMDDNN; it holds '$version'."
             exit 1
           fi
           if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
-            echo "::error::Tag v$version already exists. Raise the version in .github/release-version."
+            echo "::error::Tag v$version already exists. Raise the version in $VERSION_FILE."
             exit 1
           fi
           # Older releases have 8-digit versions; numerically they are all lower.
@@ -55,16 +90,19 @@ jobs:
           echo "Releasing version $version as v$version"
 
       - name: Setup Lua
+        if: env.SKIP != 'true'
         uses: leafo/gh-actions-lua@v12
         with:
           luaVersion: 'luajit-2.1'
 
       - name: Setup Python
+        if: env.SKIP != 'true'
         uses: actions/setup-python@v6
         with:
           python-version: '3.x'
 
       - name: Setup stylua
+        if: env.SKIP != 'true'
         run: |
           curl -fsSL --retry 3 --retry-all-errors -o "$RUNNER_TEMP/stylua.zip" \
             "https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux-$(uname -m).zip"
@@ -72,6 +110,7 @@ jobs:
           echo "$RUNNER_TEMP/stylua" >> "$GITHUB_PATH"
 
       - name: Install system dependencies
+        if: env.SKIP != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -89,18 +128,23 @@ jobs:
             fonts-symbola
 
       - name: Initialize project
+        if: env.SKIP != 'true'
         run: make init
 
       - name: Check formatting
+        if: env.SKIP != 'true'
         run: make check
 
       - name: Test
+        if: env.SKIP != 'true'
         run: make test
 
       - name: Build
+        if: env.SKIP != 'true'
         run: make build
 
       - name: Verify the drivers carry the release version
+        if: env.SKIP != 'true'
         run: |
           count=0
           for c4z in dist/oss/c4z/*.c4z; do
@@ -119,11 +163,19 @@ jobs:
           echo "$count drivers built"
 
       - name: Release notes
+        if: env.SKIP != 'true'
         run: |
           python3 - <<'EOF'
           import os
           body = (
-              "Siri Shortcuts driver by Control Pro - https://control-pro.co.uk - c4@control-pro.co.uk\n\n"
+              ""
+              + (
+                  "**Pre-release for testing.** Only drivers with Update Channel **Prerelease** install it; "
+                  "drivers on Production keep the latest release.\n\n"
+                  if os.environ.get("PRERELEASE") == "true"
+                  else ""
+              )
+              + "Siri Shortcuts driver by Control Pro - https://control-pro.co.uk - c4@control-pro.co.uk\n\n"
               "### Install\n\nInstall `cp_siri_shortcuts.c4z` with Composer Pro (Driver → Add or Update Driver). "
               "Installed drivers with Automatic Updates on update by themselves.\n\n"
               "The documentation is the PDF below and the repository's README.\n\n"
@@ -137,13 +189,15 @@ jobs:
           EOF
 
       - name: Create tag and release
+        if: env.SKIP != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           target_commitish: ${{ github.sha }}
-          name: Siri Shortcuts ${{ env.DRIVER_VERSION }}
+          name: Siri Shortcuts ${{ env.DRIVER_VERSION }}${{ env.RELEASE_LABEL }}
           body_path: ${{ runner.temp }}/notes.md
-          make_latest: true
+          prerelease: ${{ env.PRERELEASE == 'true' }}
+          make_latest: ${{ env.PRERELEASE == 'true' && 'false' || 'true' }}
           files: |
             dist/oss/c4z/*.c4z
             dist/oss/docs/*.pdf

@@ -93,6 +93,19 @@ and the PDF all show them as GitHub does. The marker goes alone on its line, and
 the quote must not sit inside a list or another quote; otherwise it stays a
 plain quote that shows the marker.
 
+## Branches, Pre-releases and Releases
+
+- All changes are made on the `testing` branch first; the Build workflow checks
+  every push.
+- **Pre-release (test build):** put a version (YYYYMMDDNN, higher than every
+  earlier release and pre-release) in `.github/prerelease-version` on `testing`
+  and push. The Release request workflow publishes a GitHub pre-release. Drivers
+  with Update Channel **Prerelease** install it; drivers on **Production**
+  ignore it.
+- **Release:** once tested, merge `testing` into `main`, put a higher version in
+  `.github/release-version` on `main` and push. Every driver with Automatic
+  Updates installs it.
+
 ## Updating Shared Code
 
 Copier is only needed for this occasional sync. It is **not** a build dependency

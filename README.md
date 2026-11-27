@@ -200,8 +200,10 @@ phone needs Apple Intelligence and the home network.
 
 - **Automatic Updates** \[ Off | **_On_** \]: install new releases from GitHub
   by themselves, checked every 30 minutes.
-- **Update Channel** \[ **_Production_** | Prerelease \]: Prerelease also
-  installs test releases.
+- **Update Channel** \[ **_Production_** | Prerelease \]: Production installs
+  releases only. Prerelease also installs pre-releases: test builds of the next
+  version, published from the repository's `testing` branch before they become a
+  release. Keep customers' systems on Production.
 
 ### Driver Settings
 

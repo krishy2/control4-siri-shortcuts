@@ -74,6 +74,7 @@
           <item>Production</item>
           <item>Prerelease</item>
         </items>
+        <description>Production: releases only. Prerelease: also test builds (GitHub pre-releases from the testing branch).</description>
       </property>
       <property>
         <name>Driver Settings</name>
