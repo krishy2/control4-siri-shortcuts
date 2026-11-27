@@ -186,6 +186,10 @@ can file an issue on GitHub:
 
 https://github.com/krishy2/control4-siri-shortcuts/issues/new
 
+If the driver is useful to you, you can buy me a coffee:
+
+<a href="https://buymeacoffee.com/szorfoktato" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
 # <span style="color:#660066">Changelog</span>
 
 <!--
