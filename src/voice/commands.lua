@@ -19,6 +19,7 @@
 local Names = require("voice.names")
 local Context = require("voice.context")
 local Rtf = require("voice.rtf")
+local Thermostat = require("voice.thermostat")
 
 local Commands = {}
 
@@ -135,6 +136,8 @@ end
 --- @field defaultRoomId integer|nil
 --- @field volumeStep number|nil percent for volume_up/down without a value (default 10)
 --- @field dryRun boolean|nil only describe, send nothing
+--- @field variables (fun(deviceId: integer): table<string, string>)|nil a device's variables by name
+--- @field scale string|nil the project's temperature scale (C4:GetTemperatureScale)
 
 --- Find a room by name, else the default room.
 local function resolveRoom(data, spoken, opts)
@@ -215,6 +218,27 @@ function Commands.run(cmd, data, opts)
   if not Context.VALID[action] or action == "unknown" then
     local heard = cmd.heard ~= "" and (" " .. cmd.heard) or ""
     return "Sorry, I can't do that." .. (heard ~= "" and (" I heard:" .. heard) or ""), sent, false
+  end
+
+  if Thermostat.ACTIONS[action] then
+    local named = cmd.room ~= "" and Names.find(data.rooms, cmd.room, nil) or nil
+    if cmd.room ~= "" and named == nil then
+      return "I don't know a room called " .. cmd.room .. ".", sent, false
+    end
+    local defaultRoom
+    for _, r in ipairs(data.rooms) do
+      if r.id == opts.defaultRoomId then
+        defaultRoom = r
+      end
+    end
+    local reply, understood = Thermostat.run(cmd, data, named, defaultRoom, {
+      send = send,
+      variables = opts.variables or function()
+        return {}
+      end,
+      scale = Thermostat.scaleLetter(opts.scale),
+    })
+    return reply, sent, understood
   end
 
   -- Rooms first for media; for lights the room only helps to pick the name.

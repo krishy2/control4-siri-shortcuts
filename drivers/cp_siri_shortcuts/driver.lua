@@ -160,6 +160,11 @@ local function execute(request)
       local ok, value = pcall(C4.GetDeviceVariable, C4, device, variableId)
       return ok and value or nil
     end,
+    variables = Catalog.variables,
+    scale = (function()
+      local ok, scale = pcall(C4.GetTemperatureScale, C4)
+      return ok and scale or "CELSIUS"
+    end)(),
     defaultRoomId = defaultRoomId(),
     volumeStep = tonumber(Properties["Volume Step"]) or 10,
     dryRun = dryRun,

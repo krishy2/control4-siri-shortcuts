@@ -13,6 +13,7 @@
 --- on OS 4.3). A request that is not answered just leaves that list empty.
 
 local Names = require("voice.names")
+local Thermostat = require("voice.thermostat")
 
 local Catalog = {}
 
@@ -45,6 +46,7 @@ Catalog.MAX_DEVICE_ID = 100000
 --- @field scenes CatalogItem[]
 --- @field scenarios CatalogItem[]
 --- @field sources CatalogItem[]
+--- @field thermostats CatalogItem[] with `modes` (string[])
 --- @field sceneAgent integer|nil
 --- @field macroAgent integer|nil
 --- @field notes string[] what could not be read, for the log
@@ -142,6 +144,20 @@ function Catalog.deviceIds(xml)
   return out
 end
 
+--- A device's variables by name: { HVAC_MODE = "Cool", ... }.
+--- @param id integer
+--- @return table<string, string>
+function Catalog.variables(id)
+  local out = {}
+  local list = call(C4.GetDeviceVariables, id)
+  for _, v in pairs(type(list) == "table" and list or {}) do
+    if type(v) == "table" and v.name ~= nil then
+      out[tostring(v.name)] = v.value ~= nil and tostring(v.value) or nil
+    end
+  end
+  return out
+end
+
 --- Devices of these driver files: id -> { deviceName, roomId, roomName, protocol }.
 local function devicesOf(files)
   local list = call(C4.GetDevices, { C4iNames = table.concat(files, ",") })
@@ -196,7 +212,7 @@ function Catalog.read(opts)
   local hidden = opts.hidden or function()
     return false
   end
-  local data = { rooms = {}, lights = {}, scenes = {}, scenarios = {}, sources = {}, notes = {} }
+  local data = { rooms = {}, lights = {}, scenes = {}, scenarios = {}, sources = {}, thermostats = {}, notes = {} }
   local roomNames = {}
 
   local function noteRoom(id, name)
@@ -227,6 +243,21 @@ function Catalog.read(opts)
         room = device.roomName,
         roomId = tonumber(device.roomId),
         kind = device.driverFileName == "light.c4i" and "light" or "light_v2",
+      })
+    end
+  end
+
+  -- Thermostats, with the modes each offers
+  for id, device in pairs(devicesOf(Thermostat.C4I)) do
+    id = tonumber(id)
+    if id ~= nil and type(device) == "table" and not hidden(device.deviceName or "") then
+      noteRoom(device.roomId, device.roomName)
+      table.insert(data.thermostats, {
+        id = id,
+        name = tostring(device.deviceName or ("Thermostat " .. id)),
+        room = device.roomName,
+        roomId = tonumber(device.roomId),
+        modes = Thermostat.modes(Catalog.variables(id)),
       })
     end
   end
@@ -341,6 +372,7 @@ function Catalog.read(opts)
   end
 
   sortByName(data.lights)
+  sortByName(data.thermostats)
   sortByName(data.scenarios)
   table.sort(data.scenes, function(a, b)
     return a.name < b.name
@@ -353,12 +385,13 @@ end
 --- @return string
 function Catalog.summary(data)
   return string.format(
-    "%d rooms, %d lights, %d scenes, %d scenarios, %d sources",
+    "%d rooms, %d lights, %d scenes, %d scenarios, %d sources, %d thermostats",
     #data.rooms,
     #data.lights,
     #data.scenes,
     #data.scenarios,
-    #data.sources
+    #data.sources,
+    #(data.thermostats or {})
   )
 end
 

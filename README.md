@@ -14,8 +14,9 @@ Siri Shortcuts driver by **Control Pro** -
 
 The Siri Shortcuts driver lets you control the home by voice from an iPhone or
 iPad with one Apple Shortcut: lights, Advanced Lighting scenes, scenarios
-(custom buttons and macros) and room media (sources, volume, mute, play, pause,
-tracks, room off). It needs no extra hardware, no cloud service and no Control4
+(custom buttons and macros), room media (sources, volume, mute, play, pause,
+tracks, room off) and thermostats (temperature, warmer, cooler, mode, and "how
+warm is it?"). It needs no extra hardware, no cloud service and no Control4
 subscription.
 
 Apple's own AI does the understanding. The shortcut asks the driver for the
@@ -122,6 +123,8 @@ Say **"Hey Siri, Home"**. Siri listens; then say the request:
 - "Evening scene", "Run Arrived"
 - "Play Sonos in the living room", "Living room volume 30", "A bit quieter"
 - "Pause", "Next track", "Turn off the living room"
+- "Set the bedroom to 22", "Make it a bit cooler", "Cool mode", "How warm is it
+  in the bedroom?"
 
 Siri answers with what was done ("Dining on.") or asks back ("Which room?"). The
 request can be in any language the dictation understands; the names are matched
@@ -227,19 +230,23 @@ phone needs Apple Intelligence and the home network.
 
 ## Commands
 
-| Say                               | Action        | Control4                                   |
-| --------------------------------- | ------------- | ------------------------------------------ |
-| turn on / off the dining light    | light_on/off  | light ON / OFF                             |
-| lights off in the kitchen         | light_off     | every light of the room OFF                |
-| dining light to 40 percent        | light_level   | SET_BRIGHTNESS_TARGET                      |
-| evening scene / evening scene off | scene         | Advanced Lighting ACTIVATE / DEACTIVATE    |
-| run Arrived                       | scenario      | custom button SELECT / macro EXECUTE_MACRO |
-| play Sonos in the living room     | source        | room SELECT_AUDIO / SELECT_VIDEO_DEVICE    |
-| living room volume 30             | volume_set    | SET_VOLUME_LEVEL                           |
-| a bit louder / quieter            | volume_up/dn  | SET_VOLUME_LEVEL from the room's volume    |
-| mute, unmute, play, pause         | ...           | MUTE_ON, MUTE_OFF, PLAY, PAUSE             |
-| next / previous track             | next/previous | SKIP_FWD / SKIP_REV                        |
-| turn off the living room          | room_off      | ROOM_OFF                                   |
+| Say                               | Action             | Control4                                   |
+| --------------------------------- | ------------------ | ------------------------------------------ |
+| turn on / off the dining light    | light_on/off       | light ON / OFF                             |
+| lights off in the kitchen         | light_off          | every light of the room OFF                |
+| dining light to 40 percent        | light_level        | SET_BRIGHTNESS_TARGET                      |
+| evening scene / evening scene off | scene              | Advanced Lighting ACTIVATE / DEACTIVATE    |
+| run Arrived                       | scenario           | custom button SELECT / macro EXECUTE_MACRO |
+| play Sonos in the living room     | source             | room SELECT_AUDIO / SELECT_VIDEO_DEVICE    |
+| living room volume 30             | volume_set         | SET_VOLUME_LEVEL                           |
+| a bit louder / quieter            | volume_up/dn       | SET_VOLUME_LEVEL from the room's volume    |
+| mute, unmute, play, pause         | ...                | MUTE_ON, MUTE_OFF, PLAY, PAUSE             |
+| next / previous track             | next/previous      | SKIP_FWD / SKIP_REV                        |
+| turn off the living room          | room_off           | ROOM_OFF                                   |
+| set the bedroom to 22             | thermostat_set     | SET_SETPOINT_HEAT / COOL / SINGLE          |
+| warmer / cooler (by 2 degrees)    | thermostat_up/down | the setpoint in use ± 1 (or the number)    |
+| cool mode, turn the heating off   | thermostat_mode    | SET_MODE_HVAC (the thermostat's own modes) |
+| how warm is it in the bedroom?    | temperature        | reads the temperature and setpoint         |
 
 Where it reads the names:
 
@@ -247,6 +254,18 @@ Where it reads the names:
 - Scenes: the Advanced Lighting agent. Scenarios: custom (Experience) buttons
   and the Macros agent.
 - Sources: each room's Listen and Watch lists.
+- Thermostats: the project's thermostats (thermostatV2 proxy) and the modes each
+  offers.
+
+Thermostats:
+
+- Temperatures are in the project's scale (Celsius or Fahrenheit).
+- A thermostat is found by its name, by the room ("set the bedroom to 22"), or
+  it is the only one. With none named, the Default Room's thermostat is used.
+- The setpoint follows the mode: Cool sets the cooling setpoint, Heat the
+  heating one. In Auto, a target above the room temperature sets heating, below
+  it cooling. Warmer and cooler move the setpoint in use.
+- If the thermostat is off, the answer says so; the mode is not changed.
 
 ## Actions
 

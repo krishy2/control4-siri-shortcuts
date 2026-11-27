@@ -124,6 +124,13 @@ ShimSetDevices({
   [32] = { deviceName = "Apple TV", driverFileName = "appletv.c4z", roomId = "100", roomName = "Living Room" },
   [SCENES] = { deviceName = "Advanced Lighting", driverFileName = "control4_agent_adv_lighting.c4i" },
   [MACROS] = { deviceName = "Macros", driverFileName = "control4_agent_macros.c4i" },
+  [41] = {
+    deviceName = "Bedroom Thermostat",
+    driverFileName = "thermostatV2.c4i",
+    roomId = "200",
+    roomName = "Bedroom",
+    variables = { ["1"] = { name = "HVAC_MODES_LIST", value = "Off,Heat,Cool,Auto,Fan Only" } },
+  },
 })
 C4.SendUIRequest = function(_, device, request)
   if device == SCENES and request == "GET_SCENE_LIST" then
@@ -167,7 +174,11 @@ T.eq(
   sourceNames,
   { "Sonos/audio/Living Room", "Apple TV/video/Living Room" }
 )
-T.eq("summary", Catalog.summary(data), "2 rooms, 2 lights, 2 scenes, 2 scenarios, 2 sources")
+T.eq("thermostat with its modes", { data.thermostats[1].name, table.concat(data.thermostats[1].modes, ",") }, {
+  "Bedroom Thermostat",
+  "Off,Heat,Cool,Auto,Fan Only",
+})
+T.eq("summary", Catalog.summary(data), "2 rooms, 2 lights, 2 scenes, 2 scenarios, 2 sources, 1 thermostats")
 
 T.section("Catalog: no agents")
 ShimSetDevices({
@@ -186,6 +197,12 @@ T.contains("actions listed", text, "volume_set: value = volume 0-100")
 T.contains("lights with rooms", text, "- Dining (room: Living Room)")
 T.contains("scenes", text, "- Evening")
 T.contains("scenarios", text, "- Megjöttünk (room: Living Room)")
+T.contains(
+  "thermostat in the context",
+  text,
+  "- Bedroom Thermostat (room: Bedroom); modes: Off, Heat, Cool, Auto, Fan Only"
+)
+T.contains("thermostat actions", text, "thermostat_set:")
 T.contains("default room", text, "the home uses Living Room")
 T.contains("extra instructions", text, "- Nappali means Living Room.")
 T.excludes("hidden name", text, "Old Lamp")
@@ -289,6 +306,74 @@ run({ action = "room_off" })
 T.eq("room off", sent, { { ROOM_LIVING, "ROOM_OFF", {} } })
 T.eq("no room known", (run({ action = "play" }, { defaultRoomId = 999 })), "Which room?")
 T.eq("unknown room", (run({ action = "play", room = "Garage" })), "I don't know a room called Garage.")
+
+T.section("Commands: thermostats")
+local tvars = {
+  HVAC_MODE = "Cool",
+  HVAC_MODES_LIST = "Off,Heat,Cool,Auto",
+  TEMPERATURE_C = "25.5",
+  COOL_SETPOINT_C = "23",
+  HEAT_SETPOINT_C = "20",
+  TEMPERATURE_F = "77.9",
+  COOL_SETPOINT_F = "73",
+}
+local function trun(cmd, extra)
+  local e = {
+    variables = function(id)
+      return id == 41 and tvars or {}
+    end,
+    scale = "CELSIUS",
+  }
+  for k, v in pairs(extra or {}) do
+    e[k] = v
+  end
+  return run(cmd, e)
+end
+T.eq("set by room", (trun({ action = "thermostat_set", room = "Bedroom", value = "22" })), "Bedroom set to 22 degrees.")
+T.eq("cool mode: cool setpoint in Celsius", sent, { { 41, "SET_SETPOINT_COOL", { CELSIUS = 22 } } })
+T.eq(
+  "the only thermostat when nothing is named",
+  (trun({ action = "thermostat_set", value = "21.5" })),
+  "Bedroom set to 21.5 degrees."
+)
+tvars.HVAC_MODE = "Auto"
+trun({ action = "thermostat_set", target = "bedroom thermostat", value = "27" })
+T.eq("auto, above the room: heat", sent[1][2], "SET_SETPOINT_HEAT")
+trun({ action = "thermostat_set", target = "bedroom thermostat", value = "22" })
+T.eq("auto, below the room: cool", sent[1][2], "SET_SETPOINT_COOL")
+tvars.HVAC_MODE = "Cool"
+T.eq("warmer by one", (trun({ action = "thermostat_up" })), "Bedroom set to 24 degrees.")
+T.eq("cooler by two", (trun({ action = "thermostat_down", value = "2" })), "Bedroom set to 21 degrees.")
+T.eq("mode", (trun({ action = "thermostat_mode", value = "heat" })), "Bedroom heat.")
+T.eq("mode command", sent, { { 41, "SET_MODE_HVAC", { MODE = "Heat" } } })
+T.eq(
+  "unknown mode lists the modes",
+  (trun({ action = "thermostat_mode", value = "turbo" })),
+  "Bedroom can be Off, Heat, Cool, Auto."
+)
+T.eq(
+  "temperature question",
+  (trun({ action = "temperature", room = "Bedroom" })),
+  "Bedroom is 25.5 degrees, set to 23."
+)
+T.eq("asking sends nothing", #sent, 0)
+T.eq(
+  "Fahrenheit project",
+  (trun({ action = "thermostat_set", value = "72" }, { scale = "FAHRENHEIT" })),
+  "Bedroom set to 72 degrees."
+)
+T.eq("Fahrenheit command", sent[1][3], { FAHRENHEIT = 72 })
+T.eq(
+  "room without one",
+  (trun({ action = "thermostat_set", room = "Living Room", value = "22" })),
+  "There is no thermostat in Living Room."
+)
+tvars.HVAC_MODE = "Off"
+T.eq(
+  "off is mentioned",
+  (trun({ action = "thermostat_set", value = "22" })),
+  "Bedroom set to 22 degrees; the thermostat is off."
+)
 
 T.section("Commands: not understood, test mode")
 local r, s, ok = run({ action = "unknown", heard = "order a pizza" })
@@ -396,7 +481,7 @@ T.eq("automatic updates on by default", Properties["Automatic Updates"], "On")
 T.truthy("update check function", type(UpdateDrivers) == "function" and type(IsUpdateLeader) == "function")
 T.eq("status", propertyWrites["Driver Status"], "Listening on port 8765")
 T.eq("context URL", propertyWrites["Context URL"], "http://192.168.1.10:8765/context")
-T.eq("names read", propertyWrites["Known Names"], "1 rooms, 1 lights, 2 scenes, 0 scenarios, 0 sources")
+T.eq("names read", propertyWrites["Known Names"], "1 rooms, 1 lights, 2 scenes, 0 scenarios, 0 sources, 0 thermostats")
 
 local ctx, conn = request("GET /context HTTP/1.1\r\nHost: x\r\n\r\n")
 T.contains("context answered", ctx, "HTTP/1.1 200 OK")

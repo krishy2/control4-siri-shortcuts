@@ -26,6 +26,11 @@ Context.ACTIONS = {
   { "next", "next track" },
   { "previous", "previous track" },
   { "room_off", "turns the room's audio and video off" },
+  { "thermostat_set", "target = thermostat (or empty with the room), value = temperature in degrees" },
+  { "thermostat_up", "warmer; value = how many degrees, empty for one" },
+  { "thermostat_down", "cooler; value = how many degrees, empty for one" },
+  { "thermostat_mode", "value = one of the thermostat's modes" },
+  { "temperature", "a question about the temperature; target = thermostat or empty with the room" },
   { "unknown", "the request fits none of the above or names nothing in the lists" },
 }
 
@@ -74,6 +79,7 @@ function Context.build(data, opts)
     "- Always pick names from the lists below, even when the request mispronounces, shortens or translates them.",
     "- A name that appears in several rooms needs the room; take it from the request.",
     "- Media actions (source, volume, mute, play, pause, next, previous, room_off) work on a room.",
+    "- 'Set the bedroom to 22', 'make it warmer', 'cool mode', 'how warm is it' are thermostat actions.",
     "- Words like 'a bit', 'a little' mean no value. 'Half' means 50.",
     "- If nothing fits, use action unknown and explain in heard.",
   }
@@ -95,6 +101,9 @@ function Context.build(data, opts)
   list(lines, "Scenes", data.scenes, inRoom)
   list(lines, "Scenarios", data.scenarios, inRoom)
   list(lines, "Sources", data.sources, inRoom)
+  list(lines, "Thermostats", data.thermostats or {}, function(t)
+    return inRoom(t) .. "; modes: " .. table.concat(t.modes or {}, ", ")
+  end)
   return table.concat(lines, "\n")
 end
 
