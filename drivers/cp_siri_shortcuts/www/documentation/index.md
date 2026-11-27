@@ -37,6 +37,11 @@ project's names, lets the Shortcuts **Use Model** action turn what you said into
 a command, and sends that command back to the driver, which carries it out and
 answers with a sentence for Siri to speak.
 
+**For the household:** the
+[User Guide](https://github.com/krishy2/control4-siri-shortcuts/blob/main/documentation/user-guide.md)
+explains to end users what the driver does, what they need, and how to build or
+add the shortcut. Send them that link.
+
 The shortcut contains nothing about your project: rename a light in Composer and
 the next request already uses the new name.
 
